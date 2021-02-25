@@ -21,8 +21,12 @@ func toBitColor(c color.Color) color.Color {
 	}
 	r, g, b, a := c.RGBA()
 
+	if a == 0 {
+		return BitColor(false)
+	}
+
 	return BitColor(
-		uint8((0.2125*float32(r))+(0.7154*float32(g))+(0.0721*float32(b))/float32(255/a)) >= 32, // I guess?
+		uint8((0.2125*float32(uint8(r)))+(0.7154*float32(uint8(g)))+(0.0721*float32(uint8(b)))/float32(255/uint8(a))) >= 10, // I guess?
 	)
 }
 
