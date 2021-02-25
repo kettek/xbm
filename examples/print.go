@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	info, m, err := decodeXBM("../tests/goblin.xbm")
+	if len(os.Args) < 2 {
+		log.Println("XBM file argument required")
+		return
+	}
+	info, m, err := decodeXBM(os.Args[1])
 	if err != nil {
 		log.Panic(err)
 	}
