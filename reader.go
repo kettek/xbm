@@ -64,7 +64,9 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 	}
 	// TODO
 	return image.Config{
-		BitColorModel, d.width, d.height,
+		ColorModel: BitColorModel,
+		Width:      d.width,
+		Height:     d.height,
 	}, nil
 }
 

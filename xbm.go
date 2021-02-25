@@ -4,8 +4,8 @@ import (
 	"image"
 )
 
-// XBMInfo contains additional XBM metadata.
-type XBMInfo struct {
+// Info contains additional XBM metadata.
+type Info struct {
 	// X,Y coordinate that determines the XBM hotspot.
 	Hotspot image.Point
 }
