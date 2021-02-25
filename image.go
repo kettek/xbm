@@ -21,8 +21,13 @@ func (b *Bits) ColorModel() color.Model { return BitColorModel }
 // Bounds returns the image's bounds.
 func (b *Bits) Bounds() image.Rectangle { return b.Rect }
 
-// At returns the pixel color at (x, y).
+// At returns the Color at (x, y).
 func (b *Bits) At(x, y int) color.Color {
+	return b.BitColorAt(x, y)
+}
+
+// BitColorAt returns the BitColor at (x, y).
+func (b *Bits) BitColorAt(x, y int) BitColor {
 	if !(image.Point{x, y}.In(b.Rect)) {
 		return BitColor(false)
 	}
