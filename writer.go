@@ -1,6 +1,7 @@
 package xbm
 
 import (
+	"encoding/hex"
 	"fmt"
 	"image"
 	"io"
@@ -62,6 +63,36 @@ func (enc *encoder) writePixels() error {
 	}
 
 	enc.w.Write([]byte(fmt.Sprintf("static unsigned char %s[] = {\n", dataName)))
+	b := enc.m.Bounds()
+	var cbyte uint8
+	bytePosition := 0
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if bytePosition > 8 {
+				v := hex.EncodeToString([]byte{cbyte})
+				enc.w.Write([]byte(fmt.Sprintf("0x%s", v)))
+				bytePosition = 0
+				cbyte = 0
+				if x != b.Max.X {
+					enc.w.Write([]byte(fmt.Sprint(",")))
+				}
+			}
+			c := toBitColor((enc.m.At(x, y))).(BitColor)
+			if c {
+				cbyte = cbyte | 1<<bytePosition
+			}
+			bytePosition++
+		}
+		if bytePosition > 0 {
+			v := hex.EncodeToString([]byte{cbyte})
+			enc.w.Write([]byte(fmt.Sprintf("0x%s", v)))
+			if y+1 != b.Max.Y {
+				enc.w.Write([]byte(fmt.Sprint(",")))
+			}
+			bytePosition = 0
+			cbyte = 0
+		}
+	}
 	// ...
 	enc.w.Write([]byte(fmt.Sprint("\n};")))
 	// TODO
