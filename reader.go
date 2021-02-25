@@ -3,7 +3,6 @@ package xbm
 import (
 	"bufio"
 	"encoding/hex"
-	"fmt"
 	"image"
 	"io"
 	"strconv"
@@ -29,7 +28,7 @@ const (
 // decoder is the type used to decode XBM data.
 type decoder struct {
 	scanner                    *bufio.Scanner
-	pixelData                  []byte
+	image                      *Bits
 	width, height              int
 	hotspotX, hotspotY         int
 	dataName                   string
@@ -39,7 +38,6 @@ type decoder struct {
 }
 
 func (d *decoder) parseHeader() error {
-	fmt.Println("-- HEADER -- ")
 	for d.scanner.Scan() {
 		token := d.scanner.Text()
 		if strings.HasPrefix(token, "//") {
@@ -88,13 +86,15 @@ func (d *decoder) parseHeader() error {
 	if err := d.scanner.Err(); err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", d)
 	return nil
 }
 
 // parsePixels parses the XBM pixel data.
 func (d *decoder) parsePixels() error {
-	fmt.Println("-- PIXELS -- ")
+	d.image = NewBits(image.Rect(
+		0, 0, d.width, d.height,
+	))
+	var x, y int
 	for d.scanner.Scan() {
 		token := d.scanner.Text()
 		words := strings.Split(strings.Trim(token, "{};"), ",")
@@ -112,14 +112,22 @@ func (d *decoder) parsePixels() error {
 					return FormatError("Invalid byte data")
 				}
 				byte = bytes[0]
+			} else {
+				return FormatError("Non-hex byte provided")
 			}
-			fmt.Printf("%08b: ", byte)
 			for i := 0; i < 8; i++ {
+				if x > d.image.Bounds().Max.X {
+					// Ignore the remainder.
+					break
+				}
 				bit := (byte&(1<<i) > 0)
-				fmt.Printf("%t ", bit)
-				// TODO: Set bits
+				d.image.SetBit(x, y, bit)
+				x++
 			}
-			fmt.Println("")
+			if x >= d.image.Bounds().Max.X {
+				x = 0
+				y++
+			}
 		}
 	}
 	if err := d.scanner.Err(); err != nil {
@@ -139,8 +147,7 @@ func Decode(r io.Reader) (image.Image, error) {
 	if err := d.parsePixels(); err != nil {
 		return nil, err
 	}
-	// TODO
-	return nil, nil
+	return d.image, nil
 }
 
 // DecodeConfig returns the dimensions of an XBM image without
