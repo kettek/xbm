@@ -27,14 +27,11 @@ const (
 
 // decoder is the type used to decode XBM data.
 type decoder struct {
-	scanner                    *bufio.Scanner
-	image                      *Bits
-	width, height              int
-	hotspotX, hotspotY         int
-	dataName                   string
-	widthName, heightName      string
-	hotspotXName, hotspotYName string
-	lastSeen                   int
+	scanner       *bufio.Scanner
+	image         *Bits
+	info          Info
+	width, height int
+	lastSeen      int
 }
 
 func (d *decoder) parseHeader() error {
@@ -54,26 +51,26 @@ func (d *decoder) parseHeader() error {
 			}
 			if d.lastSeen == seenNothing {
 				d.width = value
-				d.widthName = words[1]
+				d.info.WidthName = words[1]
 				d.lastSeen = seenDefineWidth
 			} else if d.lastSeen == seenDefineWidth {
 				d.height = value
-				d.heightName = words[1]
+				d.info.HeightName = words[1]
 				d.lastSeen = seenDefineHeight
 			} else if d.lastSeen == seenDefineHeight {
-				d.hotspotX = value
-				d.hotspotXName = words[1]
+				d.info.Hotspot.X = value
+				d.info.HotspotXName = words[1]
 				d.lastSeen = seenDefineHotspotX
 			} else if d.lastSeen == seenDefineHotspotX {
-				d.hotspotY = value
-				d.hotspotYName = words[1]
+				d.info.Hotspot.Y = value
+				d.info.HotspotYName = words[1]
 				d.lastSeen = seenDefineHotspotY
 			}
 		} else if strings.HasPrefix(token, "static") && d.lastSeen >= seenDefineHeight {
 			words := strings.Split(token, " ")
 			for _, word := range words {
 				if strings.HasSuffix(word, "[]") {
-					d.dataName = word[:len(word)-2]
+					d.info.DataName = word[:len(word)-2]
 					break
 				}
 			}
@@ -159,12 +156,38 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 	if err := d.parseHeader(); err != nil {
 		return image.Config{}, err
 	}
-	// TODO
 	return image.Config{
 		ColorModel: BitColorModel,
 		Width:      d.width,
 		Height:     d.height,
 	}, nil
+}
+
+// DecodeInfo returns the Info of an XBM image without
+// decoding the entire image.
+func DecodeInfo(r io.Reader) (Info, error) {
+	d := &decoder{
+		scanner: bufio.NewScanner(r),
+	}
+	if err := d.parseHeader(); err != nil {
+		return Info{}, err
+	}
+	return d.info, nil
+}
+
+// DecodeInfoAndImage returns the Info and the Image of
+// and XBM image.
+func DecodeInfoAndImage(r io.Reader) (Info, image.Image, error) {
+	d := &decoder{
+		scanner: bufio.NewScanner(r),
+	}
+	if err := d.parseHeader(); err != nil {
+		return Info{}, nil, err
+	}
+	if err := d.parsePixels(); err != nil {
+		return d.info, nil, err
+	}
+	return d.info, d.image, nil
 }
 
 func init() {
