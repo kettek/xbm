@@ -94,8 +94,9 @@ func (d *decoder) parsePixels() error {
 	var x, y int
 	for d.scanner.Scan() {
 		token := d.scanner.Text()
-		words := strings.Split(strings.Trim(token, "\t {};"), ",")
+		words := strings.Split(token, ",")
 		for _, word := range words {
+			word = strings.Trim(word, "\t {};")
 			var byte byte
 			if word == "" {
 				continue
