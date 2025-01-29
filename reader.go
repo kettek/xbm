@@ -192,6 +192,5 @@ func DecodeInfoAndImage(r io.Reader) (Info, image.Image, error) {
 }
 
 func init() {
-	image.RegisterFormat("xbm", "/*", Decode, DecodeConfig)
 	image.RegisterFormat("xbm", "#define", Decode, DecodeConfig)
 }
